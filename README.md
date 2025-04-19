@@ -40,6 +40,7 @@ O menu principal oferece as opções de cadastro, login ou sair do sistema. Ele 
 
 
 ✅ Resumo Geral das Funcionalidades
+
 ✅ Cadastro e autenticação de usuários
 
 ✅ Registro de transações financeiras (receitas e despesas)
