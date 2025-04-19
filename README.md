@@ -1,40 +1,49 @@
-# atividade-individual-11-04
-Trabalho do Sérgio em grupo, dia 11/04 para 25/04
+💼 Sistema de Controle Financeiro Pessoal
+📅 Atividade Individual – 11/04
+Trabalho em grupo do Sérgio — De 11/04 até 25/04
 
-Explicações de cada parte do código:
-1. Cadastro e Login de Usuário:
-cadastrar_usuario(): Pergunta ao usuário um nome de usuário e senha. O novo usuário é salvo no arquivo usuarios.txt.
+🧠 Explicações das Funcionalidades do Código
+🔐 Cadastro e Login de Usuário
+cadastrar_usuario()
+Solicita um nome de usuário e uma senha ao usuário. Esses dados são armazenados no arquivo usuarios.txt para uso posterior.
 
-login(): Verifica se o nome de usuário e senha fornecidos correspondem aos dados registrados no arquivo usuarios.txt. Se o login for bem-sucedido, o menu interno é acessado.
+login()
+Verifica se as credenciais inseridas coincidem com as registradas no arquivo usuarios.txt. Se o login for bem-sucedido, o sistema direciona o usuário ao menu interno.
 
-2. Funções de Transações:
-adicionar_transacao(): Permite ao usuário adicionar uma transação do tipo receita ou despesa, com a categoria e o valor informados.
+💰 Funções de Transações
+adicionar_transacao()
+Permite ao usuário registrar uma nova transação do tipo "receita" ou "despesa", informando também a categoria e o valor.
 
-listar_transacoes(): Lista todas as transações registradas até o momento.
+listar_transacoes()
+Exibe todas as transações registradas até o momento, organizadas em uma lista numerada.
 
-ver_saldo(): Calcula o saldo atual do usuário, considerando as receitas e despesas registradas.
+ver_saldo()
+Calcula o saldo atual com base nas transações realizadas, somando as receitas e subtraindo as despesas.
 
-filtrar_transacoes(): Permite ao usuário filtrar as transações com base no tipo (receita ou despesa) ou categoria.
+filtrar_transacoes()
+Possibilita filtrar as transações de acordo com o tipo (receita/despesa) ou a categoria definida pelo usuário.
 
-exportar_csv(): Exporte as transações registradas para um arquivo CSV com o nome escolhido pelo usuário.
+exportar_csv()
+Gera um arquivo CSV com todas as transações registradas, utilizando o nome de arquivo fornecido pelo usuário.
 
-3. Menu Interno:
-menu_interno(): Exibe o menu de operações após o login. O usuário pode escolher adicionar transações, listar transações, ver saldo, filtrar transações ou exportar para CSV.
+🧭 Menu Interno
+menu_interno()
+Apresenta as opções disponíveis após o login: adicionar transações, listar transações, consultar o saldo, aplicar filtros ou exportar os dados para CSV. O menu permanece em execução até que o usuário opte por sair.
 
-4. Menu Principal:
-O menu principal permite que o usuário se cadastre ou faça login. O sistema vai continuar executando até que o usuário escolha a opção de sair.
+🏠 Menu Principal
+O menu principal oferece as opções de cadastro, login ou sair do sistema. Ele funciona em loop, permitindo múltiplas interações com o usuário.
 
-Resumo das Funcionalidades:
-Cadastro e login de usuários.
+✅ Resumo Geral das Funcionalidades
+✅ Cadastro e autenticação de usuários
 
-Adição de transações (receitas ou despesas).
+✅ Registro de transações financeiras (receitas e despesas)
 
-Exibição de todas as transações.
+✅ Visualização de todas as transações realizadas
 
-Cálculo do saldo com base nas receitas e despesas.
+✅ Cálculo do saldo atual com base nas movimentações
 
-Filtragem de transações por tipo ou categoria.
+✅ Filtro de transações por tipo ou categoria
 
-Exportação das transações para um arquivo CSV.
+✅ Exportação dos dados financeiros para um arquivo CSV
 
-Menu interativo para o usuário navegar pelas opções.
+✅ Navegação simples e interativa através de menus
