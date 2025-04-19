@@ -1,6 +1,6 @@
 💼 Sistema de Controle Financeiro Pessoal
 📅 Atividade Individual – 11/04
-Trabalho em grupo do Sérgio — De 11/04 até 25/04
+Trabalho em grupo do Sérgio — Para 25/04
 
 🧠 Explicações das Funcionalidades do Código
 
