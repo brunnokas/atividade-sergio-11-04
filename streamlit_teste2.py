@@ -1,6 +1,8 @@
+# app.py
 import streamlit as st
 import pandas as pd
 import os
+import io
 
 # Carregar usuários
 def carregar_usuarios():
@@ -9,7 +11,7 @@ def carregar_usuarios():
     with open("usuarios.txt", "r") as arquivo:
         return dict(linha.strip().split(",") for linha in arquivo.readlines())
 
-# Salvar usuário
+# Salvar novo usuário
 def salvar_usuario(usuario, senha):
     with open("usuarios.txt", "a") as arquivo:
         arquivo.write(f"{usuario},{senha}\n")
@@ -19,21 +21,18 @@ def autenticar(usuario, senha):
     usuarios = carregar_usuarios()
     return usuarios.get(usuario) == senha
 
-# Inicializar lista de transações
+# Inicializar variáveis de sessão
 if 'transacoes' not in st.session_state:
     st.session_state.transacoes = []
-
-# Inicializar status de login
 if 'logado' not in st.session_state:
     st.session_state.logado = False
 
-# Página de login/cadastro
+# Título e menu principal
 st.title("💰 Controle de Finanças Pessoais")
-
 menu = ["Login", "Cadastro"]
 escolha = st.sidebar.selectbox("Menu", menu)
 
-# Tela de Cadastro
+# Tela de cadastro
 if escolha == "Cadastro":
     st.subheader("📋 Cadastro de Usuário")
     novo_usuario = st.text_input("Usuário")
@@ -46,7 +45,7 @@ if escolha == "Cadastro":
             salvar_usuario(novo_usuario, nova_senha)
             st.success("Usuário cadastrado com sucesso!")
 
-# Tela de Login
+# Tela de login
 elif escolha == "Login":
     st.subheader("🔐 Login")
     usuario = st.text_input("Usuário")
@@ -55,8 +54,10 @@ elif escolha == "Login":
         if autenticar(usuario, senha):
             st.session_state.logado = True
             st.success("Login bem-sucedido!")
+        else:
+            st.error("Usuário ou senha inválidos")
 
-# Após login bem-sucedido
+# Interface pós-login
 if st.session_state.logado:
     st.subheader("📌 Menu de Funcionalidades")
 
@@ -73,23 +74,19 @@ if st.session_state.logado:
         })
         st.success("Transação adicionada com sucesso!")
 
-    # Listar transações
+    # Mostrar transações
     if st.session_state.transacoes:
         st.markdown("### 📜 Transações Registradas")
         df = pd.DataFrame(st.session_state.transacoes)
+        st.dataframe(df)
 
-        # Exibição igual à imagem: ordenada e com índice invertido
-        df_visual = df.sort_values(by="valor", ascending=False).reset_index(drop=True)
-        df_visual.index = range(len(df_visual), 0, -1)
-        st.dataframe(df_visual)
-
-        # Saldo
+        # Calcular saldo
         receitas = sum(t['valor'] for t in st.session_state.transacoes if t['tipo'] == 'receita')
         despesas = sum(t['valor'] for t in st.session_state.transacoes if t['tipo'] == 'despesa')
         saldo = receitas - despesas
-        st.info(f"💼 Saldo Atual: R$ {saldo:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        st.info(f"💼 Saldo Atual: R$ {saldo:.2f}")
 
-        # Filtro
+        # Filtros
         st.markdown("### 🔎 Filtrar Transações")
         filtro_tipo = st.selectbox("Filtrar por tipo", ["", "receita", "despesa"])
         filtro_cat = st.text_input("Filtrar por categoria")
@@ -103,9 +100,17 @@ if st.session_state.logado:
         else:
             st.warning("Nenhuma transação encontrada com os filtros.")
 
-        # Exportar CSV igual à visualização
+        # Exportar CSV formatado
         st.markdown("### 📤 Exportar Dados")
-        df_export = df.sort_values(by="valor", ascending=False).reset_index(drop=True)
-        df_export.index = range(len(df_export), 0, -1)
-        csv = df_export.to_csv(index=True, index_label="", encoding="utf-8-sig")
-        st.download_button("Baixar CSV", data=csv, file_name="transacoes.csv", mime="text/csv")
+        df_ajustado = df.copy()
+        df_ajustado.columns = [col.upper() for col in df_ajustado.columns]
+        csv_buffer = io.StringIO()
+        df_ajustado.to_csv(csv_buffer, index=False, encoding="utf-8-sig", sep=";")
+        csv_data = csv_buffer.getvalue()
+
+        st.download_button(
+            label="📥 Baixar CSV Formatado",
+            data=csv_data,
+            file_name="transacoes_formatado.csv",
+            mime="text/csv"
+        )
