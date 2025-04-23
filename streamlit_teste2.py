@@ -78,11 +78,9 @@ if st.session_state.logado:
         st.markdown("### 📜 Transações Registradas")
         df = pd.DataFrame(st.session_state.transacoes)
 
-        # Exibição formatada
+        # Exibição igual à imagem: ordenada e com índice invertido
         df_visual = df.sort_values(by="valor", ascending=False).reset_index(drop=True)
-        df_visual.index = df_visual.index + 1  # Index começa do 1
-        df_visual["valor"] = df_visual["valor"].apply(lambda x: f"{x:,.0f}".replace(",", "."))
-
+        df_visual.index = range(len(df_visual), 0, -1)
         st.dataframe(df_visual)
 
         # Saldo
@@ -105,9 +103,9 @@ if st.session_state.logado:
         else:
             st.warning("Nenhuma transação encontrada com os filtros.")
 
-        # Exportar CSV formatado
+        # Exportar CSV igual à visualização
         st.markdown("### 📤 Exportar Dados")
         df_export = df.sort_values(by="valor", ascending=False).reset_index(drop=True)
-        df_export.index = df_export.index + 1
-        csv = df_export.to_csv(index_label="", encoding="utf-8-sig")
+        df_export.index = range(len(df_export), 0, -1)
+        csv = df_export.to_csv(index=True, index_label="", encoding="utf-8-sig")
         st.download_button("Baixar CSV", data=csv, file_name="transacoes.csv", mime="text/csv")
