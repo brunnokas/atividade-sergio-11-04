@@ -2,127 +2,177 @@ import streamlit as st
 import csv
 import os
 
-# ===============================
-# Funções Auxiliares
-# ===============================
-def caminho_transacoes(usuario):
-    return f"transacoes_{usuario}.csv"
+st.set_page_config(page_title="Controle Financeiro", layout="centered")
 
-def carregar_transacoes(usuario):
-    caminho = caminho_transacoes(usuario)
+# ==============================
+# Funções auxiliares
+# ==============================
+
+def caminho_transacoes():
+    return f"transacoes_{st.session_state.usuario}.csv"
+
+def carregar_transacoes():
     transacoes = []
-    if os.path.exists(caminho):
-        with open(caminho, mode="r", encoding="utf-8") as arq:
-            reader = csv.DictReader(arq)
+    try:
+        with open(caminho_transacoes(), mode="r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
             for row in reader:
                 transacoes.append({
                     "tipo": row["tipo"],
                     "categoria": row["categoria"],
                     "valor": float(row["valor"])
                 })
+    except FileNotFoundError:
+        pass
     return transacoes
 
-def salvar_transacoes(usuario, transacoes):
-    with open(caminho_transacoes(usuario), mode="w", newline="", encoding="utf-8") as arq:
-        writer = csv.DictWriter(arq, fieldnames=["tipo", "categoria", "valor"])
+def salvar_transacoes(transacoes):
+    with open(caminho_transacoes(), mode="w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["tipo", "categoria", "valor"])
         writer.writeheader()
         writer.writerows(transacoes)
 
-def usuario_existe(nome):
-    if not os.path.exists("usuarios.txt"):
-        return False
-    with open("usuarios.txt", "r") as f:
-        for linha in f:
-            u, _ = linha.strip().split(",")
-            if u == nome:
-                return True
-    return False
+# ==============================
+# Login e Cadastro
+# ==============================
 
-def autenticar(usuario, senha):
-    if not os.path.exists("usuarios.txt"):
-        return False
-    with open("usuarios.txt", "r") as f:
-        for linha in f:
-            u, s = linha.strip().split(",")
-            if u == usuario and s == senha:
-                return True
-    return False
+def cadastrar_usuario():
+    st.subheader("Cadastrar novo usuário")
+    novo_usuario = st.text_input("Nome de usuário")
+    nova_senha = st.text_input("Senha", type="password")
+    if st.button("Cadastrar"):
+        if not novo_usuario or not nova_senha:
+            st.warning("Preencha todos os campos.")
+            return
+        try:
+            with open("usuarios.txt", "r") as f:
+                for linha in f:
+                    u, _ = linha.strip().split(",")
+                    if u == novo_usuario:
+                        st.error("Nome de usuário já cadastrado.")
+                        return
+        except FileNotFoundError:
+            pass
 
-def registrar_usuario(usuario, senha):
-    with open("usuarios.txt", "a") as f:
-        f.write(f"{usuario},{senha}\n")
+        with open("usuarios.txt", "a") as f:
+            f.write(f"{novo_usuario},{nova_senha}\n")
+        st.success("Usuário cadastrado com sucesso!")
 
-# ===============================
-# Interface Streamlit
-# ===============================
 
-st.set_page_config(page_title="Controle Financeiro", layout="centered")
-st.title("💰 Controle Financeiro Pessoal")
+def fazer_login():
+    st.subheader("Login")
+    usuario = st.text_input("Usuário")
+    senha = st.text_input("Senha", type="password")
+    if st.button("Entrar"):
+        try:
+            with open("usuarios.txt", "r") as f:
+                for linha in f:
+                    u, s = linha.strip().split(",")
+                    if u == usuario and s == senha:
+                        st.session_state.logado = True
+                        st.session_state.usuario = usuario
+                        return
+        except FileNotFoundError:
+            st.error("Arquivo de usuários não encontrado.")
+        st.error("Usuário ou senha inválidos.")
 
-# Estado de sessão
-if "usuario" not in st.session_state:
-    st.session_state.usuario = None
+# ==============================
+# Funções de Transações
+# ==============================
 
-# Login ou Cadastro
-if not st.session_state.usuario:
-    aba = st.sidebar.radio("Acesso", ["Login", "Cadastro"])
-
-    if aba == "Login":
-        st.subheader("🔐 Login")
-        usuario = st.text_input("Usuário")
-        senha = st.text_input("Senha", type="password")
-        if st.button("Entrar"):
-            if autenticar(usuario, senha):
-                st.session_state.usuario = usuario
-                st.experimental_rerun()
-            else:
-                st.error("Usuário ou senha inválidos.")
-
-    elif aba == "Cadastro":
-        st.subheader("📝 Cadastro de Novo Usuário")
-        novo_usuario = st.text_input("Novo usuário")
-        nova_senha = st.text_input("Nova senha", type="password")
-        if st.button("Cadastrar"):
-            if usuario_existe(novo_usuario):
-                st.warning("Nome de usuário já cadastrado.")
-            else:
-                registrar_usuario(novo_usuario, nova_senha)
-                st.success("Usuário cadastrado com sucesso! Faça o login.")
-
-# Página Principal
-else:
-    st.sidebar.success(f"Logado como: {st.session_state.usuario}")
-    if st.sidebar.button("Sair"):
-        st.session_state.usuario = None
-        st.experimental_rerun()
-
-    transacoes = carregar_transacoes(st.session_state.usuario)
-
+def adicionar_transacao():
     st.subheader("Adicionar Transação")
     tipo = st.selectbox("Tipo", ["receita", "despesa"])
     categoria = st.text_input("Categoria")
-    valor = st.number_input("Valor (R$)", min_value=0.01, format="%.2f")
-
-    if st.button("Adicionar"):
+    valor = st.number_input("Valor", min_value=0.01, step=0.01)
+    if st.button("Salvar Transação"):
+        transacoes = carregar_transacoes()
         transacoes.append({"tipo": tipo, "categoria": categoria, "valor": valor})
-        salvar_transacoes(st.session_state.usuario, transacoes)
-        st.success("Transação registrada com sucesso!")
+        salvar_transacoes(transacoes)
+        st.success("Transação salva com sucesso!")
 
-    st.subheader("Transações Registradas")
+
+def listar_transacoes():
+    st.subheader("Minhas Transações")
+    transacoes = carregar_transacoes()
     if transacoes:
-        st.table(transacoes)
+        for i, t in enumerate(transacoes, start=1):
+            st.write(f"{i}. Tipo: {t['tipo'].capitalize()}, Categoria: {t['categoria']}, Valor: R$ {t['valor']:.2f}")
     else:
-        st.info("Nenhuma transação registrada ainda.")
+        st.info("Nenhuma transação registrada.")
 
-    st.subheader("Saldo Atual")
+
+def ver_saldo():
+    transacoes = carregar_transacoes()
     saldo = sum(t["valor"] if t["tipo"] == "receita" else -t["valor"] for t in transacoes)
-    st.metric(label="Saldo (R$)", value=f"R$ {saldo:.2f}")
+    st.subheader(f"Saldo Atual: R$ {saldo:.2f}")
 
-    st.subheader("Exportar CSV")
-    nome_arquivo = st.text_input("Nome do arquivo para exportação", value="relatorio.csv")
-    if st.button("Exportar"):
-        with open(nome_arquivo, mode="w", newline="", encoding="utf-8") as f:
+
+def filtrar_transacoes():
+    transacoes = carregar_transacoes()
+    st.subheader("Filtrar Transações")
+    filtro = st.selectbox("Filtrar por", ["tipo", "categoria"])
+    valor = st.text_input("Valor do filtro")
+    filtradas = [t for t in transacoes if t[filtro].lower() == valor.lower()]
+    if filtradas:
+        for i, t in enumerate(filtradas, start=1):
+            st.write(f"{i}. Tipo: {t['tipo'].capitalize()}, Categoria: {t['categoria']}, Valor: R$ {t['valor']:.2f}")
+    else:
+        st.warning("Nenhuma transação encontrada.")
+
+
+def exportar_csv():
+    transacoes = carregar_transacoes()
+    if transacoes:
+        with open("exportado.csv", "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=["tipo", "categoria", "valor"])
             writer.writeheader()
             writer.writerows(transacoes)
-        st.success(f"Arquivo '{nome_arquivo}' exportado com sucesso!")
+        st.success("Arquivo exportado como 'exportado.csv'")
+    else:
+        st.warning("Nenhuma transação para exportar.")
+
+# ==============================
+# Interface Principal
+# ==============================
+
+def menu_principal():
+    st.title("💼 Controle Financeiro Pessoal")
+
+    if "logado" not in st.session_state:
+        st.session_state.logado = False
+        st.session_state.usuario = ""
+
+    if not st.session_state.logado:
+        aba = st.radio("Selecione uma opção:", ["Login", "Cadastrar"])
+        if aba == "Login":
+            fazer_login()
+        else:
+            cadastrar_usuario()
+    else:
+        st.success(f"Logado como: {st.session_state.usuario}")
+        opcao = st.selectbox("Menu", [
+            "Adicionar Transação",
+            "Listar Transações",
+            "Ver Saldo",
+            "Filtrar Transações",
+            "Exportar CSV",
+            "Sair"
+        ])
+
+        if opcao == "Adicionar Transação":
+            adicionar_transacao()
+        elif opcao == "Listar Transações":
+            listar_transacoes()
+        elif opcao == "Ver Saldo":
+            ver_saldo()
+        elif opcao == "Filtrar Transações":
+            filtrar_transacoes()
+        elif opcao == "Exportar CSV":
+            exportar_csv()
+        elif opcao == "Sair":
+            st.session_state.logado = False
+            st.session_state.usuario = ""
+            st.experimental_rerun()
+
+menu_principal()
