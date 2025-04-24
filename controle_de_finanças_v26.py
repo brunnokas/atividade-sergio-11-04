@@ -1,6 +1,8 @@
 import csv
+import os
 
-# Lista global de transações
+# Variáveis globais
+usuario_atual = None
 transacoes = []
 
 # ==============================
@@ -10,13 +12,30 @@ transacoes = []
 def cadastrar_usuario():
     print("============= Cadastro de Usuário =============")
     usuario = input("Digite o nome de usuário: ")
+
+    # Verifica se o nome de usuário já existe no arquivo
+    try:
+        with open("usuarios.txt", "r") as arquivo:
+            for linha in arquivo:
+                u, s = linha.strip().split(",")
+                if u == usuario:
+                    print("Nome de usuário já cadastrado.")
+                    if input("Deseja tentar novamente? (s/n): ").lower() == 'n':
+                        return
+                    else:
+                        return cadastrar_usuario()  # Chama a função novamente
+    except FileNotFoundError:
+        pass  # Arquivo de usuários não encontrado, vamos criar um novo
+
     senha = input("Digite a senha: ")
 
+    # Cadastra o novo usuário
     with open("usuarios.txt", "a") as arquivo:
         arquivo.write(f"{usuario},{senha}\n")
-        print("Usuário cadastrado com sucesso!")
+    print("Usuário cadastrado com sucesso!")
 
 def login():
+    global usuario_atual, transacoes
     print("============= Login =============")
     while True:
         usuario = input("Digite o nome de usuário: ")
@@ -27,22 +46,58 @@ def login():
                 for linha in arquivo:
                     u, s = linha.strip().split(",")
                     if u == usuario and s == senha:
-                        print("Login bem-sucedido!")
-                        menu_interno()  # Acessa o menu após login
+                        usuario_atual = usuario
+                        print(f"Login bem-sucedido! Bem-vindo, {usuario}!")
+                        carregar_transacoes()
+                        menu_interno()
                         return
         except FileNotFoundError:
             print("Arquivo de usuários não encontrado. Cadastre um usuário primeiro.")
             return
 
-        print("Usuário ou senha inválidos. Tente novamente.\n")
+        print("Usuário ou senha inválidos. Tente novamente.")
         if input("Deseja tentar novamente? (s/n): ").lower() == 'n':
             break
+
+# ==============================
+# Arquivo de Transações por Usuário
+# ==============================
+
+def caminho_arquivo_usuario():
+    return f"transacoes_{usuario_atual}.csv"
+
+def carregar_transacoes():
+    global transacoes
+    transacoes = []
+
+    try:
+        with open(caminho_arquivo_usuario(), mode="r", encoding="utf-8") as arquivo:
+            reader = csv.DictReader(arquivo)
+            for row in reader:
+                transacoes.append({
+                    "tipo": row["tipo"],
+                    "categoria": row["categoria"],
+                    "valor": float(row["valor"])
+                })
+    except FileNotFoundError:
+        pass  # Nenhum dado ainda
+
+def salvar_transacoes():
+    with open(caminho_arquivo_usuario(), mode="w", newline="", encoding="utf-8") as arquivo:
+        campos = ["tipo", "categoria", "valor"]
+        writer = csv.DictWriter(arquivo, fieldnames=campos)
+        writer.writeheader()
+        writer.writerows(transacoes)
 
 # ==============================
 # Transações
 # ==============================
 
 def adicionar_transacao():
+    if not usuario_atual:
+        print("Erro: Nenhum usuário logado.")
+        return
+
     tipo = input("Digite o tipo (receita/despesa): ").strip().lower()
     if tipo not in ['receita', 'despesa']:
         print("Tipo inválido. Use 'receita' ou 'despesa'.")
@@ -59,9 +114,14 @@ def adicionar_transacao():
         return
 
     transacoes.append({"tipo": tipo, "categoria": categoria, "valor": valor})
+    salvar_transacoes()
     print("Transação registrada com sucesso!")
 
 def listar_transacoes():
+    if not usuario_atual:
+        print("Erro: Nenhum usuário logado.")
+        return
+
     if not transacoes:
         print("Nenhuma transação registrada.")
         return
@@ -71,6 +131,10 @@ def listar_transacoes():
         print(f"{i}. Tipo: {t['tipo'].capitalize()}, Categoria: {t['categoria']}, Valor: R$ {t['valor']:.2f}")
 
 def ver_saldo():
+    if not usuario_atual:
+        print("Erro: Nenhum usuário logado.")
+        return
+
     if not transacoes:
         print("Nenhuma transação registrada.")
         return
@@ -85,6 +149,10 @@ def ver_saldo():
     print(f"\nSaldo atual: R$ {saldo:.2f}")
 
 def filtrar_transacoes():
+    if not usuario_atual:
+        print("Erro: Nenhum usuário logado.")
+        return
+
     if not transacoes:
         print("Nenhuma transação registrada.")
         return
@@ -106,6 +174,10 @@ def filtrar_transacoes():
         print(f"{i}. Tipo: {t['tipo'].capitalize()}, Categoria: {t['categoria']}, Valor: R$ {t['valor']:.2f}")
 
 def exportar_csv():
+    if not usuario_atual:
+        print("Erro: Nenhum usuário logado.")
+        return
+
     if not transacoes:
         print("Nenhuma transação para exportar.")
         return
@@ -127,7 +199,7 @@ def exportar_csv():
 
 def menu_interno():
     while True:
-        print("\n========= MENU DE TRANSAÇÕES =========")
+        print(f"\n========= MENU DE TRANSAÇÕES ({usuario_atual}) =========")
         print("1. Adicionar transação")
         print("2. Listar transações")
         print("3. Ver saldo atual")
@@ -148,7 +220,7 @@ def menu_interno():
         elif opcao == "5":
             exportar_csv()
         elif opcao == "6":
-            print("Saindo do sistema...")
+            print(f"Saindo da conta de {usuario_atual}...\n")
             break
         else:
             print("Opção inválida. Tente novamente.")
@@ -157,20 +229,24 @@ def menu_interno():
 # Menu Principal
 # ==============================
 
-while True:
-    print("\n============= MENU PRINCIPAL =============")
-    print("1. Cadastrar Usuário")
-    print("2. Fazer Login")
-    print("3. Sair")
+def menu_principal():
+    while True:
+        print("\n============= MENU PRINCIPAL =============")
+        print("1. Cadastrar Usuário")
+        print("2. Fazer Login")
+        print("3. Sair")
 
-    opcao = input("Escolha uma opção: ")
+        opcao = input("Escolha uma opção: ")
 
-    if opcao == "1":
-        cadastrar_usuario()
-    elif opcao == "2":
-        login()
-    elif opcao == "3":
-        print("Saindo do programa...")
-        break
-    else:
-        print("Opção inválida. Tente novamente.")
+        if opcao == "1":
+            cadastrar_usuario()
+        elif opcao == "2":
+            login()
+        elif opcao == "3":
+            print("Saindo do programa...")
+            break
+        else:
+            print("Opção inválida. Tente novamente.")
+
+# Iniciar o programa
+menu_principal()
