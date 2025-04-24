@@ -2,6 +2,7 @@
 
 **Atividade Python – 11/04**  
 **Trabalho em grupo do Sérgio — Para 25/04**
+
 **Faculdade UNA DIVINÓPOLIS ; CURSO CIÊNCIAS DA COMPUTAÇÃO 1° Período**
 
 ## 🧠 Explicações das Funcionalidades do Código
